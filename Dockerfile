@@ -9,24 +9,14 @@ ENV ARTIFACTORY_SHA1 2d7daaa3272faacbc24cf3f96368a53a3e9286e0
 # Disable Tomcat's manager application.
 RUN rm -rf webapps/*
 
-# Redirect URL from / to artifactory/ using UrlRewriteFilter
-COPY urlrewrite/WEB-INF/lib/urlrewritefilter.jar /
-COPY urlrewrite/WEB-INF/urlrewrite.xml /
-RUN \
-  mkdir -p webapps/ROOT/WEB-INF/lib && \
-  mv /urlrewritefilter.jar webapps/ROOT/WEB-INF/lib && \
-  mv /urlrewrite.xml webapps/ROOT/WEB-INF/
-
 # Fetch and install Artifactory OSS war archive.
 RUN \
   echo $ARTIFACTORY_SHA1 artifactory.zip > artifactory.zip.sha1 && \
   curl -L -o artifactory.zip https://bintray.com/artifact/download/jfrog/artifactory/artifactory-${ARTIFACTORY_VERSION}.zip && \
   sha1sum -c artifactory.zip.sha1 && \
   unzip -j artifactory.zip "artifactory-*/webapps/artifactory.war" -d webapps && \
+  mv webapps/artifactory.war webapps/ROOT.war && \
   rm artifactory.zip
-
-# Add hook to install custom artifactory.war (i.e. Artifactory Pro) to replace the default OSS installation.
-ONBUILD ADD ./artifactory.war webapps/
 
 # Expose tomcat runtime options through the RUNTIME_OPTS environment variable.
 #   Example to set the JVM's max heap size to 256MB use the flag
